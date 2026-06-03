@@ -1,4 +1,13 @@
-const DATA_SOURCE_URL = "https://raw.githubusercontent.com/Ombryal/uptime-data/main/status.json";
+// SMART CONFIGURATION: Automatically detects if someone forks the repo!
+const currentHost = window.location.hostname;
+let GITHUB_USERNAME = "Ombryal"; // Your default account
+
+// If running on GitHub Pages, grab the fork owner's username dynamically
+if (currentHost.includes(".github.io")) {
+  GITHUB_USERNAME = currentHost.split('.')[0];
+}
+
+const DATA_SOURCE_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/uptime-data/main/status.json`;
 
 let monitorData = [];
 let activeFilter = 'all';
