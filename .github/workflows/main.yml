@@ -34,9 +34,6 @@ jobs:
 
       - name: Run monitor script
         run: node monitor.js
-        env:
-          # Optional: Add this to your Repo Secrets if using Discord Alerts
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }} 
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
