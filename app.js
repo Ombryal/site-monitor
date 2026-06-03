@@ -1,11 +1,14 @@
+const DATA_SOURCE_URL = "https://raw.githubusercontent.com/Ombryal/uptime-data/main/status.json";
+
 let monitorData = [];
 let activeFilter = 'all';
 let searchString = '';
 
 async function loadStatus() {
   try {
-    const res = await fetch("status.json?cache=" + Date.now());
-    if (!res.ok) throw new Error("Network file read error");
+    // Appending timestamp to bypass intermediate ISP/CDN caching
+    const res = await fetch(`${DATA_SOURCE_URL}?cache=${Date.now()}`);
+    if (!res.ok) throw new Error("Data retrieval failure");
     
     const data = await res.json();
 
@@ -17,11 +20,10 @@ async function loadStatus() {
     renderDashboard();
   } catch (err) {
     document.getElementById("list").innerHTML =
-      "<div class='no-results'>Failed to fetch metrics. Please check data source.</div>";
+      `<div class='no-results' style='color:#ff4d4d'>Failed to stream live network logs from data repository layer.</div>`;
   }
 }
 
-// Utility to clean up domain names for the title (e.g. "https://github.com" -> "Github")
 function getDomainName(url) {
   try {
     const hostname = new URL(url).hostname;
@@ -56,21 +58,21 @@ function renderDashboard() {
     const card = document.createElement("div");
     card.className = "card";
     
-    const statusClass = item.status || "error";
+    const statusClass = item.status || "offline";
     const statusLabel = statusClass.charAt(0).toUpperCase() + statusClass.slice(1);
     
     const domainTitle = getDomainName(item.url);
     const rawHostname = new URL(item.url).hostname;
 
-    // Public APIs for visual assets
     const faviconUrl = `https://www.google.com/s2/favicons?domain=${rawHostname}&sz=128`;
-    // WordPress mshots reliably generates website thumbnails for free
     const thumbnailUrl = `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(item.url)}?w=600&h=350`;
 
-    // SVG Icons
     const arrowSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="16 6 23 6 23 13"></polyline></svg>`;
     const clockSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
     const alertSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+
+    // Displays the real calculated uptime history from your data-store file!
+    const displayUptime = item.uptimePercentage ? `${item.uptimePercentage}% uptime` : "100.00% uptime";
 
     card.innerHTML = `
       <div class="card-image-wrapper">
@@ -95,7 +97,7 @@ function renderDashboard() {
           <div class="metric">
             ${statusClass === 'online' ? arrowSvg : alertSvg}
             <div class="metric-data">
-              <span class="metric-value">100.00% uptime</span>
+              <span class="metric-value">${displayUptime}</span>
             </div>
           </div>
           
@@ -129,6 +131,6 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
   });
 });
 
-// Init
+// Init Execution
 loadStatus();
 setInterval(loadStatus, 30000); 
