@@ -1,0 +1,47 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #0f0f0f;
+  color: white;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 5px;
+}
+
+#updated {
+  color: #aaa;
+  font-size: 14px;
+}
+
+.card {
+  background: #1c1c1c;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status {
+  font-weight: bold;
+}
+
+.online {
+  color: #00ff88;
+}
+
+.offline {
+  color: #ff4d4d;
+}
+
+.error {
+  color: orange;
+}
+
+.url {
+  font-size: 14px;
+  opacity: 0.8;
+}
