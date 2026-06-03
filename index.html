@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Live Site Monitor</title>
+  <title>Uptime Monitor</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -11,9 +11,42 @@
   <div class="container">
 
     <header class="header">
-      <h1>🌐 Site Status</h1>
-      <p id="updated">Loading...</p>
+      <div class="header-title">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        <div>
+          <h1>Uptime Monitor</h1>
+          <p>Real-time website uptime status</p>
+        </div>
+      </div>
+      <button class="refresh-btn" onclick="loadStatus()" title="Force Refresh">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
     </header>
+
+    <div class="system-status-bar">
+      <div class="global-status">
+        <span class="dot pulse"></span> All systems operational
+      </div>
+      <div class="status-meta">
+        <span id="updated">Loading...</span>
+        <span class="live-badge">Live</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="search" placeholder="Search domains..." autocomplete="off" />
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="online">Online</button>
+        <button class="filter-btn" data-filter="issues">Issues</button>
+      </div>
+    </div>
 
     <div id="list"></div>
 
