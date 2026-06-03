@@ -2,15 +2,25 @@ name: Website Uptime Monitor
 
 on:
   push:
+    branches: [ main ]
   workflow_dispatch:
   schedule:
     - cron: "*/10 * * * *"
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  monitor:
+  monitor-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
@@ -22,32 +32,20 @@ jobs:
         with:
           node-version: 20
 
-      - name: Show environment info (debug)
-        run: |
-          echo "Starting monitor..."
-          node -v
-          ls -la
-
       - name: Run monitor script
         run: node monitor.js
+        env:
+          # Optional: Add this to your Repo Secrets if using Discord Alerts
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }} 
 
-      - name: Verify output file exists
-        run: |
-          if [ ! -f status.json ]; then
-            echo "status.json NOT created"
-            exit 1
-          fi
-          echo "status.json created successfully"
-          cat status.json
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-      - name: Commit changes safely
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
 
-          git add status.json
-
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
-
-          git commit -m "chore: update uptime status"
-          git push
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
