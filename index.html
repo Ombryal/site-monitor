@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Uptime Monitor</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
   <div class="container">
-
     <header class="header">
       <div class="header-title">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -53,23 +51,22 @@
 
   <div id="details-overlay" class="details-overlay">
     <div class="overlay-content">
+      
       <header class="overlay-header">
         <button id="close-overlay" class="btn-back">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Back to all monitors
+          Back
         </button>
         <div class="header-status">
-          <span class="last-updated">Last updated: <span id="detail-last-updated">--</span></span>
-          <span class="live-indicator"><span class="pulse-dot"></span> Live</span>
+          <span class="live-indicator"><span class="pulse-dot"></span> Live Data</span>
         </div>
       </header>
 
       <section class="top-hero-grid">
         <div class="hero-card screenshot-container">
-          <img id="detail-screenshot" src="" alt="Website Screenshot" class="detail-img">
+          <img id="detail-screenshot" src="" alt="Screenshot" class="detail-img">
           <div class="screenshot-url-bar">
             <span id="detail-screenshot-url">--</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
           </div>
         </div>
 
@@ -81,74 +78,79 @@
               <span id="detail-status-badge" class="status-badge">--</span>
             </div>
           </div>
-          <div class="identity-url-row">
-            <span id="detail-url">--</span>
-            <button class="btn-copy"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
-          </div>
-          <p id="detail-description" class="site-description">--</p>
-          <div class="meta-grid">
-            <div class="meta-item"><span class="meta-label">Monitoring since</span><span id="detail-created-date" class="meta-value">--</span></div>
-            <div class="meta-item"><span class="meta-label">Check interval</span><span class="meta-value">10 minutes</span></div>
-            <div class="meta-item"><span class="meta-label">Monitor type</span><span class="meta-value">HTTP(s)</span></div>
-          </div>
-        </div>
+          <p id="detail-url" class="identity-url-row">--</p>
 
-        <div class="hero-card current-status-panel">
-          <div class="panel-section">
-            <h3>Current Status</h3>
-            <div class="status-large"><span class="status-dot" id="detail-large-dot"></span><h2 id="detail-large-status">--</h2></div>
-            <p id="detail-status-text" class="sub-text">--</p>
-          </div>
-          <div class="panel-divider"></div>
-          <div class="panel-section">
-            <h3>Uptime</h3>
-            <h2 id="detail-uptime-30d-large" class="highlight-green">--</h2>
-            <p class="sub-text">Last 30 days</p>
+          <div class="current-status-panel">
+            <div>
+              <div class="status-large">
+                <span class="status-dot" id="detail-large-dot"></span>
+                <h2 id="detail-large-status">--</h2>
+              </div>
+              <p id="detail-status-text" class="sub-text">--</p>
+            </div>
+            <div class="uptime-highlight-box">
+              <span class="sub-text">Uptime (30d)</span>
+              <h2 id="detail-uptime-30d-large" class="highlight-green">--</h2>
+            </div>
           </div>
         </div>
       </section>
 
-      <nav class="details-nav">
-        <a href="#" class="nav-tab active">Overview</a>
-        <a href="#" class="nav-tab">History</a>
-        <a href="#" class="nav-tab">Incidents</a>
-        <a href="#" class="nav-tab">Performance</a>
-      </nav>
-
       <section class="metrics-row">
-        <div class="metric-card"><h3>Uptime (24h)</h3><div id="spark-uptime-24" class="metric-value highlight-green">--</div><canvas id="chart-spark-24"></canvas></div>
-        <div class="metric-card"><h3>Uptime (7d)</h3><div id="spark-uptime-7" class="metric-value highlight-green">--</div><canvas id="chart-spark-7"></canvas></div>
-        <div class="metric-card"><h3>Uptime (30d)</h3><div id="spark-uptime-30" class="metric-value highlight-green">--</div><canvas id="chart-spark-30"></canvas></div>
-        <div class="metric-card"><h3>Response Time</h3><div class="metric-value"><span id="spark-response">--</span> ms</div><canvas id="chart-spark-response"></canvas></div>
+        <div class="metric-card">
+          <h3>Response Time</h3>
+          <div class="metric-value"><span id="spark-response">--</span> ms</div>
+        </div>
+        <div class="metric-card">
+          <h3>Average Latency</h3>
+          <div class="metric-value" id="stat-avg-ms">--</div>
+        </div>
       </section>
 
       <section class="main-charts">
-        <div class="chart-card full-width">
-          <div class="card-header"><h3>Response Time</h3><select class="dropdown-dark"><option>Last 24 hours</option></select></div>
-          <div class="chart-container" id="main-response-chart-container"><canvas id="main-response-chart"></canvas></div>
-          <div class="chart-footer-stats">
-            <div class="stat-box"><span>Average</span><strong id="stat-avg-ms">--</strong></div>
-            <div class="stat-box"><span>Minimum</span><strong id="stat-min-ms">--</strong></div>
-            <div class="stat-box"><span>Maximum</span><strong id="stat-max-ms">--</strong></div>
-            <div class="stat-box"><span>90th Percentile</span><strong id="stat-90-ms">--</strong></div>
+        <div class="chart-card">
+          <div class="card-header">
+            <h3>Response Time History</h3>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="main-response-chart"></canvas>
           </div>
         </div>
       </section>
 
       <section class="bottom-grid">
         <div class="chart-card">
-          <div class="card-header"><h3>Uptime History</h3><select class="dropdown-dark"><option>Last 30 days</option></select></div>
+          <div class="card-header">
+            <h3>90-Day Uptime History</h3>
+          </div>
           <div id="heatmap-container" class="heatmap-grid"></div>
           <div class="heatmap-legend">
             <span><span class="legend-dot up"></span> Up</span>
             <span><span class="legend-dot down"></span> Down</span>
+            <span><span class="legend-dot empty"></span> No Data</span>
           </div>
         </div>
+
         <div class="chart-card">
-          <div class="card-header"><h3>Recent Checks</h3><button class="btn-outline">View all</button></div>
-          <div class="table-container"><table class="data-table"><thead><tr><th>Status</th><th>Time</th><th>Code</th><th>Response Time</th></tr></thead><tbody id="recent-checks-body"></tbody></table></div>
+          <div class="card-header">
+            <h3>Recent Checks</h3>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Date & Time</th>
+                  <th>HTTP Code</th>
+                  <th>Latency</th>
+                </tr>
+              </thead>
+              <tbody id="recent-checks-body"></tbody>
+            </table>
+          </div>
         </div>
       </section>
+
     </div>
   </div>
 
