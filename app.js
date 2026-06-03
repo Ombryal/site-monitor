@@ -1,29 +1,41 @@
-async function loadData() {
-  const res = await fetch("status.json");
-  const data = await res.json();
+async function loadStatus() {
+  try {
+    const res = await fetch("status.json?cache=" + Date.now());
+    const data = await res.json();
 
-  const container = document.getElementById("container");
-  const updated = document.getElementById("updated");
+    document.getElementById("updated").innerText =
+      "Last updated: " + data.updatedAt;
 
-  updated.innerText = "Last updated: " + data.updatedAt;
+    const list = document.getElementById("list");
+    list.innerHTML = "";
 
-  container.innerHTML = "";
+    data.results.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
 
-  data.results.forEach(site => {
-    const div = document.createElement("div");
-    div.className = "card";
+      const statusClass = item.status || "error";
 
-    div.innerHTML = `
-      <div class="url">${site.url}</div>
-      <div class="status ${site.status}">
-        ${site.status.toUpperCase()}
-      </div>
-      <div>${site.latency ?? "—"} ms</div>
-    `;
+      card.innerHTML = `
+        <div class="site">
+          <div class="url">${item.url}</div>
+          <div class="latency">
+            ${item.latency ? item.latency + " ms" : "No response"}
+          </div>
+        </div>
 
-    container.appendChild(div);
-  });
+        <div class="badge ${statusClass}">
+          ${statusClass}
+        </div>
+      `;
+
+      list.appendChild(card);
+    });
+
+  } catch (err) {
+    document.getElementById("list").innerHTML =
+      "<p style='color:red'>Failed to load status.json</p>";
+  }
 }
 
-loadData();
-setInterval(loadData, 10000);
+loadStatus();
+setInterval(loadStatus, 10000);
