@@ -1,111 +1,98 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const https = require('https');
+const http = require('http');
 
-const DATA_STORE_PATH = path.join(__dirname, "data-store", "status.json");
+// Load configurations
+const SITES_FILE = 'sites.json';
+const STATUS_FILE = './data-store/status.json'; 
 
-// Load targets safely
 let sites = [];
-try {
-  sites = JSON.parse(fs.readFileSync("sites.json", "utf-8"));
-} catch (err) {
-  console.error("Critical Error: Could not read sites.json");
-  process.exit(1);
+let statuses = [];
+
+if (fs.existsSync(SITES_FILE)) {
+    sites = JSON.parse(fs.readFileSync(SITES_FILE, 'utf-8'));
 }
 
-// Load historical data if it exists in the cloned data repo
-let historicalMetrics = {};
-if (fs.existsSync(DATA_STORE_PATH)) {
-  try {
-    const rawData = fs.readFileSync(DATA_STORE_PATH, "utf-8");
-    const parsedData = JSON.parse(rawData);
-    if (parsedData.results && Array.isArray(parsedData.results)) {
-      parsedData.results.forEach(site => {
-        historicalMetrics[site.url] = {
-          totalChecks: site.totalChecks || 0,
-          totalFailures: site.totalFailures || 0
-        };
-      });
-    }
-  } catch (err) {
-    console.log("No valid historical metrics found. Starting a fresh tracking history.");
-  }
+if (fs.existsSync(STATUS_FILE)) {
+    statuses = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf-8'));
 }
 
-async function checkSite(url) {
-  const start = Date.now();
-  if (!url || typeof url !== "string" || !url.startsWith("http")) {
-    return { url: String(url), status: "offline", statusCode: null, latency: null };
-  }
+// Helper: Measure latency and fetch status code
+function pingSite(url) {
+    return new Promise((resolve) => {
+        const protocol = url.startsWith('https') ? https : http;
+        const startTime = Date.now();
 
-  let isUp = false;
-  let statusCode = null;
-  let latency = null;
+        const req = protocol.get(url, { timeout: 8000 }, (res) => {
+            const latency = Date.now() - startTime;
+            resolve({ up: res.statusCode >= 200 && res.statusCode < 400, code: res.statusCode, latency });
+        });
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    const res = await fetch(url, {
-      method: "HEAD",
-      signal: controller.signal,
-      headers: { 'User-Agent': 'StatusBot/1.0 Uptime Checker', 'Cache-Control': 'no-cache' }
+        req.on('error', () => {
+            resolve({ up: false, code: 500, latency: 0 });
+        });
+        
+        req.on('timeout', () => {
+            req.destroy();
+            resolve({ up: false, code: 408, latency: 8000 });
+        });
     });
+}
 
-    clearTimeout(timeout);
-    latency = Date.now() - start;
-    statusCode = res.status;
-    isUp = res.ok || res.status === 405;
+// Main execution block
+async function runChecks() {
+    const today = new Date().toISOString().split('T')[0];
+    const timestamp = new Date().toISOString();
+    
+    for (const url of sites) {
+        console.log(`Checking ${url}...`);
+        const result = await pingSite(url);
+        
+        // Find existing data for this site, or create a blank slate
+        let siteData = statuses.find(s => s.url === url);
+        if (!siteData) {
+            siteData = { 
+                url: url, 
+                totalChecks: 0, 
+                failedChecks: 0,
+                recentChecks: [],
+                dailyLogs: {}
+            };
+            statuses.push(siteData);
+        }
 
-  } catch (err) {
-    // Backup GET retry if HEAD is blocked entirely
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      const retryStart = Date.now();
-      const retryRes = await fetch(url, { method: "GET", signal: controller.signal });
-      clearTimeout(timeout);
-      
-      latency = Date.now() - retryStart;
-      statusCode = retryRes.status;
-      isUp = retryRes.ok;
-    } catch (retryErr) {
-      isUp = false;
+        // 1. Update Lifetime Stats
+        siteData.totalChecks++;
+        if (!result.up) siteData.failedChecks++;
+        
+        siteData.status = result.up ? 'UP' : 'DOWN';
+        siteData.latency = result.latency;
+        siteData.uptime = ((siteData.totalChecks - siteData.failedChecks) / siteData.totalChecks) * 100;
+
+        // 2. Update Daily Heatmap Log
+        if (!siteData.dailyLogs[today]) {
+            siteData.dailyLogs[today] = { total: 0, up: 0 };
+        }
+        siteData.dailyLogs[today].total++;
+        if (result.up) siteData.dailyLogs[today].up++;
+
+        // 3. Update Recent Checks Array (Keep last 20 for charts/tables)
+        siteData.recentChecks.push({
+            time: timestamp,
+            status: siteData.status,
+            code: result.code,
+            latency: result.latency
+        });
+        
+        // Trim array to prevent massive file bloat
+        if (siteData.recentChecks.length > 20) {
+            siteData.recentChecks.shift();
+        }
     }
-  }
 
-  // Calculate persistent historical metrics math
-  const previous = historicalMetrics[url] || { totalChecks: 0, totalFailures: 0 };
-  const currentTotalChecks = previous.totalChecks + 1;
-  const currentTotalFailures = previous.totalFailures + (isUp ? 0 : 1);
-  const calculatedUptime = ((currentTotalChecks - currentTotalFailures) / currentTotalChecks) * 100;
-
-  return {
-    url,
-    status: isUp ? "online" : "offline",
-    statusCode,
-    latency,
-    totalChecks: currentTotalChecks,
-    totalFailures: currentTotalFailures,
-    uptimePercentage: calculatedUptime.toFixed(2)
-  };
+    // Save enriched data back to the locker
+    fs.writeFileSync(STATUS_FILE, JSON.stringify(statuses, null, 2));
+    console.log('Metrics successfully updated.');
 }
 
-async function run() {
-  console.log(`Analyzing ${sites.length} systems targets...`);
-  const results = await Promise.all(sites.map(site => checkSite(site)));
-  
-  const output = {
-    updatedAt: new Date().toISOString(),
-    results
-  };
-
-  try {
-    fs.writeFileSync(DATA_STORE_PATH, JSON.stringify(output, null, 2));
-    console.log("Historical state saved to data storage layer successfully.");
-  } catch (writeErr) {
-    console.error("Critical Write Error:", writeErr);
-    process.exit(1);
-  }
-}
-
-run();
+runChecks();
