@@ -1,0 +1,17 @@
+{
+  "updatedAt": "2026-06-03T00:00:00Z",
+  "results": [
+    {
+      "url": "https://google.com",
+      "status": "online",
+      "statusCode": 200,
+      "latency": 120
+    },
+    {
+      "url": "https://example.com",
+      "status": "offline",
+      "statusCode": null,
+      "latency": null
+    }
+  ]
+}
