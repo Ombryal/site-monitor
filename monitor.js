@@ -13,8 +13,20 @@ if (fs.existsSync(SITES_FILE)) {
     sites = JSON.parse(fs.readFileSync(SITES_FILE, 'utf-8'));
 }
 
+// Defensive loading: Force an array if the file holds the old object format or is corrupt
 if (fs.existsSync(STATUS_FILE)) {
-    statuses = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf-8'));
+    try {
+        const parsedData = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf-8'));
+        if (Array.isArray(parsedData)) {
+            statuses = parsedData;
+        } else {
+            console.log("Old data format detected. Resetting status file to the new enterprise array structure...");
+            statuses = [];
+        }
+    } catch (err) {
+        console.log("Corrupt data file detected. Resetting...");
+        statuses = [];
+    }
 }
 
 // Helper: Measure latency and fetch status code
