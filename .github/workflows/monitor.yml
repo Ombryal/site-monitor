@@ -1,0 +1,37 @@
+name: Execute Uptime Engine
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code Repo
+        uses: actions/checkout@v4
+
+      # Clones your secondary data repository into a subfolder named 'data-store'
+      - name: Checkout Data Repo
+        uses: actions/checkout@v4
+        with:
+          repository: '${{ github.repository_owner }}/uptime-data' # Change 'uptime-data' if named differently
+          token: ${{ secrets.DATA_REPO_PAT }}
+          path: 'data-store'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run monitor script
+        run: node monitor.js
+
+      - name: Commit and Push to Data Repo
+        run: |
+          cd data-store
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add status.json
+          git diff --cached --quiet || (git commit -m "chore: log metrics update [skip ci]" && git push)
