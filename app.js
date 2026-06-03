@@ -1,6 +1,5 @@
-// SMART CONFIGURATION
 const currentHost = window.location.hostname;
-let GITHUB_USERNAME = "Ombryal"; // Fallback default
+let GITHUB_USERNAME = "Ombryal";
 
 if (currentHost.includes(".github.io")) {
   GITHUB_USERNAME = currentHost.split('.')[0];
@@ -8,25 +7,20 @@ if (currentHost.includes(".github.io")) {
 
 const DATA_SOURCE_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/uptime-data/main/status.json`;
 
-let monitorData = [];
-
-// DOM Elements
 const listContainer = document.getElementById('list');
 const updatedText = document.getElementById('updated');
 const overlay = document.getElementById('details-overlay');
 const closeBtn = document.getElementById('close-overlay');
 
-// Close Overlay Event
 closeBtn.addEventListener('click', () => {
   overlay.classList.remove('active');
 });
 
-// Fetch and Render Main Dashboard
 async function loadStatus() {
   try {
     const res = await fetch(DATA_SOURCE_URL + '?t=' + new Date().getTime());
     if (!res.ok) throw new Error('Data not found');
-    monitorData = await res.json();
+    const monitorData = await res.json();
     renderCards(monitorData);
     
     const now = new Date();
@@ -42,20 +36,17 @@ function renderCards(data) {
   
   data.forEach(site => {
     const isUp = site.status === 'UP';
-    const uptimePercent = site.uptime ? site.uptime.toFixed(2) : "100.00";
+    // Strict number check handles 0.00% properly
+    const uptimePercent = (typeof site.uptime === 'number') ? site.uptime.toFixed(2) : "100.00";
     const latency = site.latency ? site.latency + ' ms' : '-- ms';
     const statusClass = isUp ? 'online' : 'offline';
     const statusText = isUp ? 'Online' : 'Offline';
     
-    // WordPress mshots API for screenshots
     const screenshotUrl = `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(site.url)}?w=600`;
-    // Google API for favicons
     const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(site.url)}`;
 
     const card = document.createElement('div');
     card.className = 'card';
-    
-    // Pass the site data to the overlay when clicked
     card.onclick = () => openDetails(site, screenshotUrl, faviconUrl);
 
     card.innerHTML = `
@@ -93,76 +84,71 @@ function renderCards(data) {
   });
 }
 
-// ----------------------------------------------------
-// OVERLAY LOGIC (The Advanced View)
-// ----------------------------------------------------
 function openDetails(site, screenshot, favicon) {
   const isUp = site.status === 'UP';
   const cleanUrl = site.url.replace('https://', '').replace('http://', '');
   
-  // 1. Populate Text Data
   document.getElementById('detail-title').innerText = cleanUrl;
   document.getElementById('detail-url').innerText = site.url;
   document.getElementById('detail-screenshot-url').innerText = site.url;
   document.getElementById('detail-screenshot').src = screenshot;
   document.getElementById('detail-favicon').src = favicon;
   
-  // Status Panels
   const statusBadge = document.getElementById('detail-status-badge');
   const largeDot = document.getElementById('detail-large-dot');
   const largeStatus = document.getElementById('detail-large-status');
   
   if (isUp) {
     statusBadge.innerText = "Online";
-    statusBadge.style.color = "#3fb950";
-    statusBadge.style.backgroundColor = "rgba(63, 185, 80, 0.15)";
-    statusBadge.style.borderColor = "rgba(63, 185, 80, 0.4)";
-    largeDot.style.backgroundColor = "#3fb950";
+    statusBadge.className = "status-badge online";
+    largeDot.className = "status-dot dot-online";
     largeStatus.innerText = "Online";
     document.getElementById('detail-status-text').innerText = "Everything is operating normally.";
   } else {
     statusBadge.innerText = "Offline";
-    statusBadge.style.color = "#f85149";
-    statusBadge.style.backgroundColor = "rgba(248, 81, 73, 0.15)";
-    statusBadge.style.borderColor = "rgba(248, 81, 73, 0.4)";
-    largeDot.style.backgroundColor = "#f85149";
+    statusBadge.className = "status-badge offline";
+    largeDot.className = "status-dot dot-offline";
     largeStatus.innerText = "Offline";
-    document.getElementById('detail-status-text').innerText = "Site is currently unreachable.";
+    document.getElementById('detail-status-text').innerText = "Site is currently experiencing issues.";
   }
 
-  // Metrics
-  const uptime = site.uptime ? site.uptime.toFixed(2) : "100.00";
+  const uptime = (typeof site.uptime === 'number') ? site.uptime.toFixed(2) : "100.00";
   document.getElementById('detail-uptime-30d-large').innerText = `${uptime}%`;
-  document.getElementById('spark-uptime-30').innerText = `${uptime}%`;
   document.getElementById('spark-response').innerText = site.latency || "--";
-  document.getElementById('stat-avg-ms').innerText = site.latency ? site.latency + " ms" : "--";
   
-  // Populate Recent Checks Table
+  // Calculate Avg Latency safely
+  if (site.recentChecks && site.recentChecks.length > 0) {
+    const sum = site.recentChecks.reduce((a, b) => a + (b.latency || 0), 0);
+    const avg = Math.round(sum / site.recentChecks.length);
+    document.getElementById('stat-avg-ms').innerText = avg + " ms";
+  } else {
+    document.getElementById('stat-avg-ms').innerText = "-- ms";
+  }
+  
+  // Build Check History Table
   const tbody = document.getElementById('recent-checks-body');
   tbody.innerHTML = '';
   if (site.recentChecks && site.recentChecks.length > 0) {
-    // Show newest first (reverse the array)
     [...site.recentChecks].reverse().forEach(check => {
-      const rowClass = check.status === 'UP' ? 'highlight-green' : 'sub-text';
-      const checkDot = check.status === 'UP' ? '#3fb950' : '#f85149';
+      const isCheckUp = check.status === 'UP';
+      const indicatorColor = isCheckUp ? '#10b981' : '#ef4444';
       tbody.innerHTML += `
         <tr>
-          <td style="color:${checkDot}; font-weight:600;">● ${check.status === 'UP' ? 'Online' : 'Offline'}</td>
-          <td>${new Date(check.time).toLocaleString()}</td>
-          <td>${check.code || 200}</td>
+          <td style="color:${indicatorColor}; font-weight:600;">● ${isCheckUp ? 'Online' : 'Offline'}</td>
+          <td>${new Date(check.time).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</td>
+          <td>${check.code || '--'}</td>
           <td>${check.latency} ms</td>
         </tr>
       `;
     });
   }
 
-  // Populate Heatmap (90 days)
+  // Draw 90 Day Heatmap Grid
   const heatmap = document.getElementById('heatmap-container');
   heatmap.innerHTML = '';
   const days = site.dailyLogs || {};
-  
-  // Generate 90 blank boxes, override with real data if it exists
   const today = new Date();
+  
   for (let i = 89; i >= 0; i--) {
     let targetDate = new Date(today);
     targetDate.setDate(today.getDate() - i);
@@ -173,53 +159,73 @@ function openDetails(site, screenshot, favicon) {
       let percent = (days[dateString].up / days[dateString].total) * 100;
       box.className = percent > 95 ? 'heat-block up' : 'heat-block down';
     } else {
-      box.className = 'heat-block empty'; // No data yet
+      box.className = 'heat-block empty';
     }
     box.title = dateString;
     heatmap.appendChild(box);
   }
 
-  // Draw simple sparkline chart
-  if (site.recentChecks) {
-    const latencies = site.recentChecks.map(c => c.latency);
-    drawSparkline('main-response-chart', latencies);
-  }
-
-  // Slide it in!
+  // Activate Overlay first so canvas can detect dimensions properly
   overlay.classList.add('active');
+
+  // Draw Line Chart after short delay so UI finishes expanding
+  setTimeout(() => {
+    if (site.recentChecks) {
+      const latencies = site.recentChecks.map(c => c.latency);
+      drawSparkline('main-response-chart', latencies);
+    }
+  }, 100);
 }
 
-// Vanilla JS Sparkline Drawer
 function drawSparkline(canvasId, dataArray) {
   const canvas = document.getElementById(canvasId);
-  if (!canvas || !dataArray || dataArray.length === 0) return;
+  const wrapper = canvas.parentElement;
+  
+  // Set real pixel dimensions to avoid blurring
+  canvas.width = wrapper.clientWidth;
+  canvas.height = wrapper.clientHeight;
   
   const ctx = canvas.getContext('2d');
-  // Match the canvas internal resolution to its CSS size
-  canvas.width = canvas.parentElement.clientWidth;
-  canvas.height = canvas.parentElement.clientHeight;
-  
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  const maxVal = Math.max(...dataArray, 200); // Minimum ceiling of 200ms
+  if (!dataArray || dataArray.length === 0) return;
+
+  const maxVal = Math.max(...dataArray, 200);
   const stepX = canvas.width / (dataArray.length - 1 || 1);
   
   ctx.beginPath();
-  ctx.strokeStyle = '#3fb950';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 3;
   ctx.lineJoin = 'round';
+  
+  // Create gradient fill under line
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+  gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+  
+  ctx.moveTo(0, canvas.height);
   
   dataArray.forEach((val, i) => {
     const x = i * stepX;
-    // Scale the height and invert it (0 is at top of canvas)
-    const y = canvas.height - ((val / maxVal) * (canvas.height - 10)) - 5;
+    const y = canvas.height - ((val / maxVal) * (canvas.height - 20)) - 10;
+    ctx.lineTo(x, y);
+  });
+  
+  // Fill gradient
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  
+  // Stroke line
+  ctx.beginPath();
+  dataArray.forEach((val, i) => {
+    const x = i * stepX;
+    const y = canvas.height - ((val / maxVal) * (canvas.height - 20)) - 10;
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
-  
   ctx.stroke();
 }
 
-// Start app
 loadStatus();
-setInterval(loadStatus, 30000); // Auto-refresh every 30s
+setInterval(loadStatus, 30000);
