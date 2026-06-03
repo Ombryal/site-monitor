@@ -158,6 +158,7 @@ body {
   gap: 24px;
   align-items: center;
   transition: border-color 0.2s;
+  cursor: pointer; /* Added so users know it's clickable for the overlay */
 }
 
 .card:hover {
@@ -171,7 +172,7 @@ body {
   flex-shrink: 0;
   border-radius: 8px;
   overflow: hidden;
-  background: #1f2937; /* Placeholder color while loading */
+  background: #1f2937;
   border: 1px solid #374151;
 }
 
@@ -179,7 +180,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top; /* Keeps the top of the website visible */
+  object-position: top;
 }
 
 /* Right side: Content */
@@ -301,7 +302,7 @@ body {
   font-size: 15px;
 }
 
-/* RESPONSIVE LAYOUT */
+/* RESPONSIVE LAYOUT - FIXED MAIN DASHBOARD */
 @media (max-width: 768px) {
   .controls {
     flex-direction: column;
@@ -316,8 +317,11 @@ body {
     height: 180px;
   }
   .card-metrics {
-    gap: 24px;
-    flex-wrap: wrap;
+    /* Forcing items to stay side-by-side with a smaller gap */
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 16px; 
+    justify-content: flex-start;
   }
 }
 
@@ -336,7 +340,6 @@ body {
   transform: translateX(100%); /* Hidden off-screen to the right by default */
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: #c9d1d9;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .details-overlay.active {
@@ -355,7 +358,9 @@ body {
 /* Typography & Colors */
 .highlight-green { color: #3fb950; }
 .sub-text { color: #8b949e; font-size: 14px; }
-h1, h2, h3 { margin: 0; color: #f0f6fc; font-weight: 600; }
+.overlay-content h1, 
+.overlay-content h2, 
+.overlay-content h3 { margin: 0; color: #f0f6fc; font-weight: 600; }
 
 /* Header */
 .overlay-header {
@@ -574,8 +579,6 @@ h1, h2, h3 { margin: 0; color: #f0f6fc; font-weight: 600; }
   gap: 4px;
   margin-bottom: 16px;
 }
-/* We will inject heatmap blocks here via JS. 
-   Example block class for later: */
 .heat-block { width: 12px; height: 12px; border-radius: 2px; background: #2ea043; }
 .heat-block.down { background: #f85149; }
 .heat-block.empty { background: #21262d; }
@@ -601,9 +604,8 @@ h1, h2, h3 { margin: 0; color: #f0f6fc; font-weight: 600; }
 .data-table th { color: #8b949e; padding-bottom: 16px; border-bottom: 1px solid #30363d; font-weight: 500;}
 .data-table td { padding: 12px 0; border-bottom: 1px solid #21262d; }
 
-
 /* =========================================
-   RESPONSIVE (Mobile adjustments)
+   OVERLAY RESPONSIVE (Mobile adjustments)
    ========================================= */
 @media (max-width: 1024px) {
   .top-hero-grid { grid-template-columns: 1fr 1fr; }
@@ -619,6 +621,6 @@ h1, h2, h3 { margin: 0; color: #f0f6fc; font-weight: 600; }
   .metrics-row { grid-template-columns: 1fr 1fr; }
   .bottom-grid { grid-template-columns: 1fr; }
   .meta-grid { grid-template-columns: 1fr; }
-  .chart-footer-stats { flex-wrap: wrap; gap: 16px; }
+  .chart-footer-stats { flex-wrap: wrap; gap: 16px; justify-content: space-between; }
   .stat-box { width: 45%; }
 }
