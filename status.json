@@ -1,23 +1,23 @@
 {
-  "updatedAt": "2026-06-03T06:20:50.995Z",
+  "updatedAt": "2026-06-03T06:21:30.660Z",
   "results": [
     {
       "url": "https://google.com",
       "status": "online",
       "statusCode": 200,
-      "latency": 226
+      "latency": 138
     },
     {
       "url": "https://github.com",
       "status": "online",
       "statusCode": 200,
-      "latency": 167
+      "latency": 22
     },
     {
       "url": "https://youtube.com",
       "status": "online",
       "statusCode": 200,
-      "latency": 325
+      "latency": 145
     }
   ]
 }
