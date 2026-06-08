@@ -3,44 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Uptime Monitor</title>
+  <title>System Monitor</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="container">
     <header class="header">
       <div class="header-title">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
         <div>
-          <h1>Uptime Monitor</h1>
-          <p>Real-time website uptime status</p>
+          <h1>System Monitor</h1>
+          <p>Real-time edge telemetry and status logging</p>
         </div>
       </div>
-      <button class="refresh-btn" onclick="loadStatus()" title="Force Refresh">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <polyline points="1 20 1 14 7 14"></polyline>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      <button class="refresh-btn" onclick="loadStatus()" aria-label="Refresh telemetry">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
         </svg>
       </button>
     </header>
 
     <div class="system-status-bar">
       <div class="global-status">
-        <span class="dot pulse"></span> All systems operational
+        <span class="dot pulse"></span> Operational monitoring active
       </div>
       <div class="status-meta">
-        <span id="updated">Loading...</span>
-        <span class="live-badge">Live</span>
+        <span id="updated">Synchronizing...</span>
+        <span class="live-badge">Telemetry Live</span>
       </div>
     </div>
 
     <div class="controls">
-      <input type="text" id="search" placeholder="Search domains..." autocomplete="off" />
+      <input type="text" id="search" placeholder="Filter environments or endpoints..." autocomplete="off" />
       <div class="filters">
-        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn active" data-filter="all">All Targets</button>
         <button class="filter-btn" data-filter="online">Online</button>
         <button class="filter-btn" data-filter="issues">Issues</button>
       </div>
@@ -49,68 +47,85 @@
     <div id="list"></div>
   </div>
 
-  <div id="details-overlay" class="details-overlay">
+  <div id="details-overlay" class="details-overlay" aria-hidden="true">
     <div class="overlay-content">
       
       <header class="overlay-header">
         <button id="close-overlay" class="btn-back">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Back
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Dashboard View
         </button>
         <div class="header-status">
-          <span class="live-indicator"><span class="pulse-dot"></span> Live Data</span>
+          <span class="live-indicator"><span class="pulse-dot"></span> Active Node Connection</span>
         </div>
       </header>
 
       <section class="top-hero-grid">
         <div class="hero-card screenshot-container">
-          <img id="detail-screenshot" src="" alt="Screenshot" class="detail-img">
+          <img id="detail-screenshot" src="" alt="Target workspace preview" class="detail-img">
           <div class="screenshot-url-bar">
             <span id="detail-screenshot-url">--</span>
           </div>
         </div>
 
         <div class="hero-card site-identity">
-          <div class="identity-header">
-            <img id="detail-favicon" src="" alt="Logo" class="detail-logo">
-            <div class="identity-title">
-              <h1 id="detail-title">--</h1>
-              <span id="detail-status-badge" class="status-badge">--</span>
-            </div>
-          </div>
-          <p id="detail-url" class="identity-url-row">--</p>
-
-          <div class="current-status-panel">
-            <div>
-              <div class="status-large">
-                <span class="status-dot" id="detail-large-dot"></span>
-                <h2 id="detail-large-status">--</h2>
+          <div>
+            <div class="identity-header">
+              <img id="detail-favicon" src="" alt="" class="detail-logo" onerror="this.style.display='none'">
+              <div class="identity-title">
+                <h1 id="detail-title">--</h1>
+                <span id="detail-status-badge" class="status-badge">--</span>
               </div>
-              <p id="detail-status-text" class="sub-text">--</p>
             </div>
-            <div class="uptime-highlight-box">
-              <span class="sub-text">Uptime (30d)</span>
-              <h2 id="detail-uptime-30d-large" class="highlight-green">--</h2>
+            <p id="detail-description" class="site-description">--</p>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Protocol</span>
+              <span id="meta-protocol" class="meta-value">--</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Check Interval</span>
+              <span class="meta-value">5 Minutes</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Target Zone</span>
+              <span class="meta-value">Global Edge</span>
             </div>
           </div>
         </div>
       </section>
 
+      <section class="current-status-panel">
+        <div class="status-left">
+          <div class="status-large">
+            <span class="status-dot" id="detail-large-dot"></span>
+            <h2 id="detail-large-status">--</h2>
+          </div>
+          <p id="detail-status-text" class="sub-text">--</p>
+        </div>
+        <div class="uptime-highlight-box">
+          <span class="sub-text">30-Day Uptime</span>
+          <h2 id="detail-uptime-30d-large" class="highlight-green">--</h2>
+        </div>
+      </section>
+
       <section class="metrics-row">
         <div class="metric-card">
-          <h3>Response Time</h3>
-          <div class="metric-value"><span id="spark-response">--</span> ms</div>
+          <h3>Real-time Response</h3>
+          <div class="metric-value"><span id="spark-response">--</span><span class="unit">ms</span></div>
         </div>
         <div class="metric-card">
-          <h3>Average Latency</h3>
-          <div class="metric-value" id="stat-avg-ms">--</div>
+          <h3>Rolling Window Average</h3>
+          <div class="metric-value"><span id="stat-avg-ms">--</span><span class="unit">ms</span></div>
         </div>
       </section>
 
       <section class="main-charts">
         <div class="chart-card">
           <div class="card-header">
-            <h3>Response Time History</h3>
+            <h3>Latency Waveform (Recent Inbound Checks)</h3>
           </div>
           <div class="chart-wrapper">
             <canvas id="main-response-chart"></canvas>
@@ -121,28 +136,28 @@
       <section class="bottom-grid">
         <div class="chart-card">
           <div class="card-header">
-            <h3>90-Day Uptime History</h3>
+            <h3>90-Day Performance Distribution Map</h3>
           </div>
           <div id="heatmap-container" class="heatmap-grid"></div>
           <div class="heatmap-legend">
-            <span><span class="legend-dot up"></span> Up</span>
-            <span><span class="legend-dot down"></span> Down</span>
-            <span><span class="legend-dot empty"></span> No Data</span>
+            <span><span class="legend-dot up"></span> Continuous Uptime</span>
+            <span><span class="legend-dot down"></span> Outage/Issue Block</span>
+            <span><span class="legend-dot empty"></span> Out of Window</span>
           </div>
         </div>
 
         <div class="chart-card">
           <div class="card-header">
-            <h3>Recent Checks</h3>
+            <h3>Historical Event Logs</h3>
           </div>
           <div class="table-container">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Status</th>
-                  <th>Date & Time</th>
-                  <th>HTTP Code</th>
-                  <th>Latency</th>
+                  <th>Status Assert</th>
+                  <th>Timestamp</th>
+                  <th>HTTP Core</th>
+                  <th>Network Latency</th>
                 </tr>
               </thead>
               <tbody id="recent-checks-body"></tbody>
