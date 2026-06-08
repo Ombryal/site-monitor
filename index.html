@@ -8,9 +8,10 @@
 </head>
 <body>
   <div class="container">
+    
     <header class="header">
       <div class="header-title">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
         <div>
@@ -18,7 +19,7 @@
           <p>Real-time edge telemetry and status logging</p>
         </div>
       </div>
-      <button class="refresh-btn" onclick="loadStatus()" aria-label="Refresh telemetry">
+      <button class="refresh-btn" aria-label="Refresh telemetry">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
         </svg>
@@ -27,32 +28,37 @@
 
     <div class="system-status-bar">
       <div class="global-status">
-        <span class="dot pulse"></span> Operational monitoring active
+        <span id="global-status-dot" class="pulse-dot"></span> 
+        <span id="global-status-text">Hydrating operational telemetry map...</span>
       </div>
       <div class="status-meta">
-        <span id="updated">Synchronizing...</span>
+        <div>Sync Time: <span id="last-updated-text">--:--:--</span></div>
         <span class="live-badge">Telemetry Live</span>
       </div>
     </div>
 
     <div class="controls">
-      <input type="text" id="search" placeholder="Filter environments or endpoints..." autocomplete="off" />
+      <input type="text" id="search" placeholder="Filter environments, node IDs or endpoints..." autocomplete="off" />
       <div class="filters">
         <button class="filter-btn active" data-filter="all">All Targets</button>
-        <button class="filter-btn" data-filter="online">Online</button>
-        <button class="filter-btn" data-filter="issues">Issues</button>
+        <button class="filter-btn" data-filter="up">Online</button>
+        <button class="filter-btn" data-filter="down">Issues</button>
       </div>
     </div>
 
-    <div id="list"></div>
+    <div id="monitors-grid">
+      </div>
   </div>
 
   <div id="details-overlay" class="details-overlay" aria-hidden="true">
     <div class="overlay-content">
       
       <header class="overlay-header">
-        <button id="close-overlay" class="btn-back">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <button id="close-overlay" class="btn-back" onclick="dashboardApp.closeSiteDetails()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
           Dashboard View
         </button>
         <div class="header-status">
@@ -60,115 +66,105 @@
         </div>
       </header>
 
-      <section class="top-hero-grid">
-        <div class="hero-card screenshot-container">
-          <img id="detail-screenshot" src="" alt="Target workspace preview" class="detail-img">
-          <div class="screenshot-url-bar">
-            <span id="detail-screenshot-url">--</span>
+      <div id="overlay-dynamic-content">
+        <section class="top-hero-grid">
+          <div class="hero-card screenshot-container">
+            <img src="" alt="Target workspace preview" class="detail-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="placeholder-svg-thumb" style="display:none; height:175px;">
+              <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="screenshot-url-bar">
+              <span>--</span>
+            </div>
           </div>
-        </div>
 
-        <div class="hero-card site-identity">
-          <div>
-            <div class="identity-header">
-              <img id="detail-favicon" src="" alt="" class="detail-logo" onerror="this.style.display='none'">
-              <div class="identity-title">
-                <h1 id="detail-title">--</h1>
-                <span id="detail-status-badge" class="status-badge">--</span>
+          <div class="hero-card site-identity">
+            <div>
+              <div class="identity-header">
+                <div class="detail-logo">
+                  <img src="" alt="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' fill=\'%239ca3af\' viewBox=\'0 0 16 16\'><path d=\'M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm0 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1z\'/></svg>'">
+                </div>
+                <div class="identity-title">
+                  <h1>--</h1>
+                  <span class="badge online"><span class="dot"></span>--</span>
+                </div>
               </div>
+              <p class="site-description">Connecting with system validation arrays...</p>
             </div>
-            <p id="detail-description" class="site-description">--</p>
-          </div>
 
-          <div class="meta-grid">
-            <div class="meta-item">
-              <span class="meta-label">Protocol</span>
-              <span id="meta-protocol" class="meta-value">--</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Check Interval</span>
-              <span class="meta-value">5 Minutes</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Target Zone</span>
-              <span class="meta-value">Global Edge</span>
+            <div class="meta-grid">
+              <div class="meta-item"><span class="meta-label">Protocol</span><span class="meta-value">--</span></div>
+              <div class="meta-item"><span class="meta-label">Check Interval</span><span class="meta-value">5 Minutes</span></div>
+              <div class="meta-item"><span class="meta-label">Target Zone</span><span class="meta-value">Global Edge</span></div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="current-status-panel">
-        <div class="status-left">
-          <div class="status-large">
-            <span class="status-dot" id="detail-large-dot"></span>
-            <h2 id="detail-large-status">--</h2>
+        <section class="current-status-panel">
+          <div class="status-left">
+            <div class="status-large">
+              <span class="status-dot"></span>
+              <h2>--</h2>
+            </div>
+            <p class="sub-text">--</p>
           </div>
-          <p id="detail-status-text" class="sub-text">--</p>
-        </div>
-        <div class="uptime-highlight-box">
-          <span class="sub-text">30-Day Uptime</span>
-          <h2 id="detail-uptime-30d-large" class="highlight-green">--</h2>
-        </div>
-      </section>
+          <div class="uptime-highlight-box">
+            <span class="sub-text">Calculated System Availability</span>
+            <h2 class="highlight-green">--%</h2>
+          </div>
+        </section>
 
-      <section class="metrics-row">
-        <div class="metric-card">
-          <h3>Real-time Response</h3>
-          <div class="metric-value"><span id="spark-response">--</span><span class="unit">ms</span></div>
-        </div>
-        <div class="metric-card">
-          <h3>Rolling Window Average</h3>
-          <div class="metric-value"><span id="stat-avg-ms">--</span><span class="unit">ms</span></div>
-        </div>
-      </section>
+        <section class="metrics-row">
+          <div class="metric-card"><h3>Real-Time Delay</h3><div class="metric-value">--<span class="unit">ms</span></div></div>
+          <div class="metric-card"><h3>Moving Average</h3><div class="metric-value">--<span class="unit">ms</span></div></div>
+          <div class="metric-card"><h3>Signal Smoothing (EMA)</h3><div class="metric-value">--<span class="unit">ms</span></div></div>
+          <div class="metric-card"><h3>Verification Probes</h3><div class="metric-value">--<span class="unit">cycles</span></div></div>
+        </section>
 
-      <section class="main-charts">
-        <div class="chart-card">
-          <div class="card-header">
-            <h3>Latency Waveform (Recent Inbound Checks)</h3>
+        <section class="main-charts">
+          <div class="chart-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:0.3px; color:var(--text-muted);">Real-Time Microsecond Waveform</h3>
+              <span class="sub-text">Recent Inbound Cycles</span>
+            </div>
+            <div class="chart-wrapper">
+              </div>
           </div>
-          <div class="chart-wrapper">
-            <canvas id="main-response-chart"></canvas>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="bottom-grid">
-        <div class="chart-card">
-          <div class="card-header">
-            <h3>90-Day Performance Distribution Map</h3>
+        <section class="bottom-grid">
+          <div class="hero-card">
+            <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:0.3px; color:var(--text-muted);">90-Day Structural Distribution Tracking</h3>
+            <div class="heatmap-grid"></div>
+            <div class="heatmap-legend">
+              <div><span class="legend-dot up"></span> Cleared Cycle</div>
+              <div><span class="legend-dot down"></span> Degraded State</div>
+              <div><span class="legend-dot empty"></span> No Entry Frame</div>
+            </div>
           </div>
-          <div id="heatmap-container" class="heatmap-grid"></div>
-          <div class="heatmap-legend">
-            <span><span class="legend-dot up"></span> Continuous Uptime</span>
-            <span><span class="legend-dot down"></span> Outage/Issue Block</span>
-            <span><span class="legend-dot empty"></span> Out of Window</span>
-          </div>
-        </div>
 
-        <div class="chart-card">
-          <div class="card-header">
-            <h3>Historical Event Logs</h3>
+          <div class="hero-card">
+            <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:0.3px; color:var(--text-muted); margin-bottom:12px;">Chronological Handshake Assertions</h3>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Execution Window</th>
+                    <th>Status Assert</th>
+                    <th>Network Code</th>
+                    <th>Transport Response Delay</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  </tbody>
+              </table>
+            </div>
           </div>
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Status Assert</th>
-                  <th>Timestamp</th>
-                  <th>HTTP Core</th>
-                  <th>Network Latency</th>
-                </tr>
-              </thead>
-              <tbody id="recent-checks-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-    </div>
+        </section>
+        
+      </div> </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="dashboard.js"></script>
 </body>
 </html>
