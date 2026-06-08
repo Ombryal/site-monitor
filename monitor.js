@@ -1,6 +1,4 @@
 const fs = require('fs');
-const https = require('https');
-const http = require('http');
 
 // Load configurations
 const SITES_FILE = 'sites.json';
@@ -13,42 +11,52 @@ if (fs.existsSync(SITES_FILE)) {
     sites = JSON.parse(fs.readFileSync(SITES_FILE, 'utf-8'));
 }
 
-// Defensive loading: Force an array if the file holds the old object format or is corrupt
+// Defensive loading
 if (fs.existsSync(STATUS_FILE)) {
     try {
         const parsedData = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf-8'));
         if (Array.isArray(parsedData)) {
             statuses = parsedData;
         } else {
-            console.log("Old data format detected. Resetting status file to the new enterprise array structure...");
             statuses = [];
         }
     } catch (err) {
-        console.log("Corrupt data file detected. Resetting...");
         statuses = [];
     }
 }
 
-// Helper: Measure latency and fetch status code
-function pingSite(url) {
-    return new Promise((resolve) => {
-        const protocol = url.startsWith('https') ? https : http;
-        const startTime = Date.now();
-
-        const req = protocol.get(url, { timeout: 8000 }, (res) => {
-            const latency = Date.now() - startTime;
-            resolve({ up: res.statusCode >= 200 && res.statusCode < 400, code: res.statusCode, latency });
+// Upgraded Engine: Native Fetch with Browser Headers
+async function pingSite(url) {
+    const startTime = Date.now();
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                // Mimics a real Windows/Chrome browser to bypass Cloudflare/WAFs
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            },
+            // Automatically cancels if it takes longer than 8 seconds
+            signal: AbortSignal.timeout(8000)
         });
 
-        req.on('error', () => {
-            resolve({ up: false, code: 500, latency: 0 });
-        });
+        const latency = Date.now() - startTime;
         
-        req.on('timeout', () => {
-            req.destroy();
-            resolve({ up: false, code: 408, latency: 8000 });
-        });
-    });
+        return { 
+            // response.ok automatically handles 200-299 ranges and successful redirects
+            up: response.ok, 
+            code: response.status, 
+            latency: latency 
+        };
+    } catch (error) {
+        // Distinguish between a timeout and a complete server crash
+        const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+        return { 
+            up: false, 
+            code: isTimeout ? 408 : 500, 
+            latency: isTimeout ? 8000 : 0 
+        };
+    }
 }
 
 // Main execution block
@@ -60,7 +68,6 @@ async function runChecks() {
         console.log(`Checking ${url}...`);
         const result = await pingSite(url);
         
-        // Find existing data for this site, or create a blank slate
         let siteData = statuses.find(s => s.url === url);
         if (!siteData) {
             siteData = { 
@@ -88,7 +95,7 @@ async function runChecks() {
         siteData.dailyLogs[today].total++;
         if (result.up) siteData.dailyLogs[today].up++;
 
-        // 3. Update Recent Checks Array (Keep last 20 for charts/tables)
+        // 3. Update Recent Checks Array
         siteData.recentChecks.push({
             time: timestamp,
             status: siteData.status,
@@ -96,13 +103,11 @@ async function runChecks() {
             latency: result.latency
         });
         
-        // Trim array to prevent massive file bloat
         if (siteData.recentChecks.length > 20) {
             siteData.recentChecks.shift();
         }
     }
 
-    // Save enriched data back to the locker
     fs.writeFileSync(STATUS_FILE, JSON.stringify(statuses, null, 2));
     console.log('Metrics successfully updated.');
 }
